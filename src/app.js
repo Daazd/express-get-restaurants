@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const Restaurant = require("../models/index")
+const { check, validationResult } = require("express-validator"); 
 const db = require("../db/connection");
 
 app.use(express.json());
@@ -40,6 +41,24 @@ app.put("/restaurants/:id", async (req, res) => {
         } else {
             res.status(404).json({ error: "Restaurant not found" });
         }
+    } catch (error) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+app.post("/restaurants", [
+    check("name").not().isEmpty().trim().escape(),
+    check("location").not().isEmpty().trim().escape(),
+    check("cuisine").not().isEmpty().trim().escape()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+        const restaurant = await Restaurant.create(req.body);
+        res.status(201).json(restaurant);
     } catch (error) {
         console.error(err);
         res.status(500).json({ error: "Internal Server Error" });

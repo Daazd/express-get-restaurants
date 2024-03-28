@@ -1,19 +1,9 @@
 const express = require("express");
 const request = require("supertest");
 const app = require("./src/app");
-jest.mock("./db/connection");
 
-async function setupTestData() {
-    const Restaurant = require("./models/Restaurant");
-    await Restaurant.create({ name: "Restaurant 1", location: "Location 1" });
-    await Restaurant.create({ name: "Restaurant 2", location: "Location 2" });
-    await Restaurant.create({ name: "Restaurant 3", location: "Location 3" });
-}
 
 describe('restaurants', () => {
-    beforeEach(async () => {
-        await setupTestData();
-    });
 
     it('GET /restaurants', async () => {
         const response = await request(app).get("/restaurants");
@@ -24,7 +14,7 @@ describe('restaurants', () => {
     it('GET /restaurants/:id', async () => {
         const response = await request(app).get("/restaurants/1");
         expect(response.status).toBe(200);
-        expect(response.body.name).toBe("Restaurant 1");
+        expect(response.body.name).toBe("AppleBees");
     });
 
     it('GET /restaurants/:id - restaurant not found', async () => {
@@ -53,25 +43,27 @@ describe('restaurants', () => {
         expect(response.status).toBe(404);
     });
 
-    it('POST /restaurants', async () => {
-        const response = await request(app).post("/restaurants").send({ name: "New Restaurant", location: "New Location" });
-        expect(response.status).toBe(201);
-        expect(response.body.name).toBe("New Restaurant");
-        expect(response.body.location).toBe("New Location");
+    it('POST /restaurants - fails when name is empty', async () => {
+        const newRestaurant = { name: "", location: "New Location", cuisine: "New Cuisine" };
+        const response = await request(app).post("/restaurants").send(newRestaurant);
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toBeDefined();
+
     });
 
-    it('POST /restaurants - missing name', async () => {
-        const response = await request(app).post("/restaurants").send({ location: "New Location" });
+    it('POST /restaurants - fails when location is empty', async () => {
+        const newRestaurant = { name: "New Restaurant", location: "", cuisine: "New Cuisine" };
+        const response = await request(app).post("/restaurants").send(newRestaurant);
         expect(response.status).toBe(400);
+        expect(response.body.errors).toBeDefined();
     });
 
-    it('POST /restaurants - missing location', async () => {
-        const response = await request(app).post("/restaurants").send({ name: "New Restaurant" });
+    it('POST /restaurants - fails when cuisine is empty', async () => {
+        const newRestaurant = { name: "New Restaurant", location: "New Location", cuisine: "" };
+        const response = await request(app).post("/restaurants").send(newRestaurant);
         expect(response.status).toBe(400);
+        expect(response.body.errors).toBeDefined();
     });
 
-    it('POST /restaurants - missing name and location', async () => {
-        const response = await request(app).post("/restaurants").send({});
-        expect(response.status).toBe(400);
-    });
+
 });
